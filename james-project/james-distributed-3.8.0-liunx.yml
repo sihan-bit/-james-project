@@ -1,0 +1,89 @@
+version: '3'
+
+services:
+
+  james:
+    depends_on:
+      - opensearch
+      - cassandra
+      - tika
+      - rabbitmq
+      - s3
+    image: apache/james:distributed-3.8.0
+    container_name: james
+    hostname: james.local
+    volumes:
+      - "/root/conf/keystore:/root/conf/keystore"
+    ports:
+      - "80:80"
+      - "25:25"
+      - "110:110"
+      - "143:143"
+      - "465:465"
+      - "587:587"
+      - "993:993"
+      - "8000:8000"
+
+  opensearch:
+    image: opensearchproject/opensearch:2.1.0
+    container_name: opensearch
+    ports:
+      - "9200:9200"
+      - "9600:9600"
+    environment:
+      - discovery.type=single-node
+      - DISABLE_INSTALL_DEMO_CONFIG=true
+      - DISABLE_SECURITY_PLUGIN=true
+
+  cassandra:
+    image: cassandra:3.11.16
+    container_name: cassandra
+    volumes:
+      - "/var/lib/cassandra:/var/lib/cassandra"
+    ports:
+      - "9042:9042"
+
+  tika:
+    image: apache/tika:1.28.5
+    container_name: tika
+    ports:
+      - "9998:9998"
+
+  rabbitmq:
+    image: rabbitmq:3.9.18-management
+    container_name: rabbitmq
+    volumes:
+      - "/var/lib/rabbitmq:/var/lib/rabbitmq"
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+  
+  s3-mem:
+    image: zenko/cloudserver:latest-0.0.0
+    container_name: s3.docker.test.mem
+    volumes:
+      - "/usr/src/app/localData:/usr/src/app/localData"
+      - "/usr/src/app/localMetadata:/usr/src/app/localMetadata"
+    ports:
+      - "8001:8000"
+    environment:
+      - SCALITY_ACCESS_KEY_ID=accessKey1
+      - SCALITY_SECRET_ACCESS_KEY=secretKey1
+      - S3BACKEND=mem
+      - LOG_LEVEL=trace
+      - REMOTE_MANAGEMENT_DISABLE=1
+
+  s3:
+    image: zenko/cloudserver:latest-0.0.0
+    container_name: s3.docker.test
+    volumes:
+      - "/usr/src/app/localData:/usr/src/app/localData"
+      - "/usr/src/app/localMetadata:/usr/src/app/localMetadata"
+    ports:
+      - "18000:8000"
+    environment:
+      - SCALITY_ACCESS_KEY_ID=accessKey1
+      - SCALITY_SECRET_ACCESS_KEY=secretKey1
+      - S3BACKEND=file
+      - LOG_LEVEL=trace
+      - REMOTE_MANAGEMENT_DISABLE=1
